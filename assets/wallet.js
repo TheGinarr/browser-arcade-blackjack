@@ -29,7 +29,7 @@
 import { lade, speichere } from "./storage.js";
 
 export const STARTGELD = 1000;
-const SPIEL = "casino";   // gemeinsamer Namensraum für alle Casino-Spiele
+const SPIEL = "casino"; // gemeinsamer Namensraum für alle Casino-Spiele
 
 /** Aktueller Kontostand (legt beim allerersten Aufruf das Startgeld an). */
 export function kontostand() {

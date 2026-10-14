@@ -29,6 +29,12 @@ Oder den Ordner auf einen statischen Hoster laden (GitHub Pages, Netlify, eigene
 
 Simuliertes Glücksspiel mit Spielgeld: kein Echtgeld, keine Käufe. Gedacht ab 16 Jahren.
 
+## Code-Stil
+
+Der Code ist mit [Prettier](https://prettier.io) formatiert (Einstellungen in `.prettierrc.json`,
+Editor-Grundlagen in `.editorconfig`): 2 Leerzeichen Einrückung, eine CSS-Regel pro Zeile,
+höchstens 100 Zeichen pro Zeile. Vor einem Commit einfach `npx prettier --write .` ausführen.
+
 ## Lizenz
 
 Code: MIT (`LICENSE`). Schriften: SIL Open Font License 1.1 (`assets/fonts/OFL-LIZENZ.txt`).

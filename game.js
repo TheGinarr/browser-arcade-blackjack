@@ -27,16 +27,22 @@
 import { bewegungReduziert, toplisteAnzeigen, stillEintragen } from "./assets/ui.js";
 import { spielZuruecksetzen, lade, speichere } from "./assets/storage.js";
 import {
-  STARTGELD, kontostand, einsatzAbbuchen, rundeAbschliessen,
-  istPleite, pleiteNeustart, walletHud, walletHudAktualisieren,
+  STARTGELD,
+  kontostand,
+  einsatzAbbuchen,
+  rundeAbschliessen,
+  istPleite,
+  pleiteNeustart,
+  walletHud,
+  walletHudAktualisieren,
 } from "./assets/wallet.js";
 
-const SPIEL = "blackjack";            // Schlüssel für storage.js (Topliste, gewählter Chip)
-const CHIPS = [10, 25, 50, 100];      // erlaubte Einsätze
-const MINDESTEINSATZ = CHIPS[0];      // darunter ist man pleite
-const AUSTEIL_MS = 380;               // passt zu .karte-szene.fliegt in spiel.css
-const FLIP_MS = 600;                  // passt zu transition in .karte-dreh
-const DEALER_PAUSE_MS = 450;          // kurze Denkpause zwischen den Dealer-Karten
+const SPIEL = "blackjack"; // Schlüssel für storage.js (Topliste, gewählter Chip)
+const CHIPS = [10, 25, 50, 100]; // erlaubte Einsätze
+const MINDESTEINSATZ = CHIPS[0]; // darunter ist man pleite
+const AUSTEIL_MS = 380; // passt zu .karte-szene.fliegt in spiel.css
+const FLIP_MS = 600; // passt zu transition in .karte-dreh
+const DEALER_PAUSE_MS = 450; // kurze Denkpause zwischen den Dealer-Karten
 
 /* ============================================================
    TEIL 1: REINE SPIELLOGIK (ohne DOM)
@@ -50,10 +56,10 @@ const DEALER_PAUSE_MS = 450;          // kurze Denkpause zwischen den Dealer-Kar
  * ließen sich ♥ und ♦ nicht per CSS-"color" einfärben.
  */
 export const FARBEN = [
-  { name: "Pik",    symbol: "♠︎", rot: false },
-  { name: "Herz",   symbol: "♥︎", rot: true },
-  { name: "Karo",   symbol: "♦︎", rot: true },
-  { name: "Kreuz",  symbol: "♣︎", rot: false },
+  { name: "Pik", symbol: "♠︎", rot: false },
+  { name: "Herz", symbol: "♥︎", rot: true },
+  { name: "Karo", symbol: "♦︎", rot: true },
+  { name: "Kreuz", symbol: "♣︎", rot: false },
 ];
 
 /* Kartenwerte wie in Higher Lower: 2..10, Bube=11, Dame=12, König=13, Ass=14. */
@@ -113,13 +119,13 @@ export function kartenPunkte(wert) {
  */
 export function handWert(karten) {
   let summe = 0;
-  let asse = 0;                 // Asse, die gerade noch als 11 zählen
+  let asse = 0; // Asse, die gerade noch als 11 zählen
   for (const karte of karten) {
     summe += kartenPunkte(karte.wert);
     if (karte.wert === 14) asse++;
   }
   while (summe > 21 && asse > 0) {
-    summe -= 10;                // Ass von 11 auf 1 umstellen
+    summe -= 10; // Ass von 11 auf 1 umstellen
     asse--;
   }
   return {
@@ -169,11 +175,16 @@ export function rundeAuswerten(spielerKarten, dealerKarten, einsatz) {
   const d = handWert(dealerKarten);
 
   if (s.ueberkauft) return { ergebnis: "niederlage", auszahlung: 0, grund: "spieler-bust" };
-  if (s.blackjack && d.blackjack) return { ergebnis: "push", auszahlung: einsatz, grund: "beide-blackjack" };
+  if (s.blackjack && d.blackjack)
+    return { ergebnis: "push", auszahlung: einsatz, grund: "beide-blackjack" };
   if (s.blackjack) {
     // 3:2 → Gewinn = 1,5 x Einsatz. Bei ungeraden Einsätzen (25) gäbe das
     // ein halbes Spielgeld; wie im Casino wird zugunsten der Bank abgerundet.
-    return { ergebnis: "blackjack", auszahlung: einsatz + Math.floor(einsatz * 3 / 2), grund: "blackjack" };
+    return {
+      ergebnis: "blackjack",
+      auszahlung: einsatz + Math.floor((einsatz * 3) / 2),
+      grund: "blackjack",
+    };
   }
   if (d.blackjack) return { ergebnis: "niederlage", auszahlung: 0, grund: "dealer-blackjack" };
   if (d.ueberkauft) return { ergebnis: "sieg", auszahlung: einsatz * 2, grund: "dealer-bust" };
@@ -264,20 +275,30 @@ function starteSpiel() {
 
   // Beide Seiten (Dealer/Spieler) haben denselben Aufbau → ein Objekt je Seite
   const seiten = {
-    dealer:  { hand: document.getElementById("hand-dealer"),  reihe: document.getElementById("dealer-karten"),  punkte: document.getElementById("dealer-punkte"),  doms: [] },
-    spieler: { hand: document.getElementById("hand-spieler"), reihe: document.getElementById("spieler-karten"), punkte: document.getElementById("spieler-punkte"), doms: [] },
+    dealer: {
+      hand: document.getElementById("hand-dealer"),
+      reihe: document.getElementById("dealer-karten"),
+      punkte: document.getElementById("dealer-punkte"),
+      doms: [],
+    },
+    spieler: {
+      hand: document.getElementById("hand-spieler"),
+      reihe: document.getElementById("spieler-karten"),
+      punkte: document.getElementById("spieler-punkte"),
+      doms: [],
+    },
   };
 
   walletHud(document.getElementById("wallet-hud"));
 
   // ----- Spielzustand -----
-  let phase = "einsatz";      // "einsatz" | "austeilen" | "spieler" | "dealer" | "ende"
-  let deck = [];              // oberste Karte = LETZTE im Array (pop)
+  let phase = "einsatz"; // "einsatz" | "austeilen" | "spieler" | "dealer" | "ende"
+  let deck = []; // oberste Karte = LETZTE im Array (pop)
   let spielerKarten = [];
   let dealerKarten = [];
   let dealerVerdeckt = false; // zweite Dealer-Karte noch zu?
-  let einsatz = ladeEinsatz();       // gewählter Chip
-  let gesamtEinsatz = 0;             // laufende Runde (beim Double doppelt)
+  let einsatz = ladeEinsatz(); // gewählter Chip
+  let gesamtEinsatz = 0; // laufende Runde (beim Double doppelt)
 
   /** Gespeicherten Chip laden – nur erlaubte Werte, sonst 50. */
   function ladeEinsatz() {
@@ -311,7 +332,7 @@ function starteSpiel() {
     } else if (netto === 0) {
       gewinnElement.textContent = "Push";
     } else {
-      gewinnElement.textContent = `−${zahlText(-netto)}`;   // echtes Minuszeichen (U+2212)
+      gewinnElement.textContent = `−${zahlText(-netto)}`; // echtes Minuszeichen (U+2212)
       gewinnElement.classList.add("minus");
     }
   }
@@ -404,7 +425,7 @@ function starteSpiel() {
   async function dealerAufdecken() {
     if (!dealerVerdeckt) return;
     const dom = seiten.dealer.doms[1];
-    karteFuellen(dom, dealerKarten[1]);                 // erst JETZT steht der Wert im HTML
+    karteFuellen(dom, dealerKarten[1]); // erst JETZT steht der Wert im HTML
     dom.szene.setAttribute("aria-label", kartenName(dealerKarten[1]));
     dom.dreh.classList.add("aufgedeckt");
     dealerVerdeckt = false;
@@ -429,7 +450,7 @@ function starteSpiel() {
       return;
     }
     gesamtEinsatz = einsatz;
-    walletHudAktualisieren();                            // der Einsatz verlässt sichtbar das Konto
+    walletHudAktualisieren(); // der Einsatz verlässt sichtbar das Konto
     phase = "austeilen";
     steuerungEinstellen();
 
@@ -437,13 +458,13 @@ function starteSpiel() {
     gewinnSetzen(null);
     einsatzAnzeige.textContent = `Einsatz ${zahlText(gesamtEinsatz)}`;
     meldungSetzen("Karten werden ausgeteilt …");
-    deck = mischen(neuesDeck());                         // pro Runde ein frisches Deck
+    deck = mischen(neuesDeck()); // pro Runde ein frisches Deck
 
     // Reihenfolge wie am echten Tisch: Spieler, Dealer (offen), Spieler, Dealer (verdeckt)
     await karteAusteilen("spieler", ziehen());
     await karteAusteilen("dealer", ziehen());
     await karteAusteilen("spieler", ziehen());
-    dealerVerdeckt = true;                               // VOR dem Austeilen: die Pille zeigt dann "x + ?"
+    dealerVerdeckt = true; // VOR dem Austeilen: die Pille zeigt dann "x + ?"
     await karteAusteilen("dealer", ziehen(), true);
 
     // Blackjack auf einer Seite: Die Runde endet sofort (Dealer schaut nach)
@@ -466,10 +487,10 @@ function starteSpiel() {
     await karteAusteilen("spieler", ziehen());
     const hand = handWert(spielerKarten);
     if (hand.ueberkauft) {
-      await dealerAufdecken();                           // Dealer zeigt seine Karte, zieht aber nicht mehr
+      await dealerAufdecken(); // Dealer zeigt seine Karte, zieht aber nicht mehr
       await rundeBeenden();
     } else if (hand.summe === 21) {
-      await dealerSpielt();                              // bei 21 gibt es nichts mehr zu entscheiden
+      await dealerSpielt(); // bei 21 gibt es nichts mehr zu entscheiden
     } else {
       phase = "spieler";
       meldungSetzen("Noch eine Karte oder bleiben?");
@@ -487,7 +508,7 @@ function starteSpiel() {
   async function doppeln() {
     if (phase !== "spieler") return;
     if (!darfDoppeln(spielerKarten, kontostand(), einsatz)) return;
-    if (!einsatzAbbuchen(einsatz)) return;               // zweiter Einsatz in gleicher Höhe
+    if (!einsatzAbbuchen(einsatz)) return; // zweiter Einsatz in gleicher Höhe
     gesamtEinsatz = einsatz * 2;
     walletHudAktualisieren();
     einsatzAnzeige.textContent = `Einsatz ${zahlText(gesamtEinsatz)}`;
@@ -524,19 +545,22 @@ function starteSpiel() {
 
     const texte = {
       "spieler-bust": ["Überkauft! Über 21, die Runde ist verloren.", "falsch"],
-      "beide-blackjack": ["Beide haben Blackjack – Push, du bekommst den Einsatz zurück.", "gleich"],
-      "blackjack": ["Blackjack! Das zahlt 3:2.", "richtig"],
+      "beide-blackjack": [
+        "Beide haben Blackjack – Push, du bekommst den Einsatz zurück.",
+        "gleich",
+      ],
+      blackjack: ["Blackjack! Das zahlt 3:2.", "richtig"],
       "dealer-blackjack": ["Der Dealer hat Blackjack.", "falsch"],
       "dealer-bust": ["Der Dealer überkauft sich – du gewinnst!", "richtig"],
-      "hoeher": ["Du hast mehr als der Dealer – gewonnen!", "richtig"],
-      "gleich": ["Gleichstand – Push, du bekommst den Einsatz zurück.", "gleich"],
-      "niedriger": ["Der Dealer ist näher an 21 – verloren.", "falsch"],
+      hoeher: ["Du hast mehr als der Dealer – gewonnen!", "richtig"],
+      gleich: ["Gleichstand – Push, du bekommst den Einsatz zurück.", "gleich"],
+      niedriger: ["Der Dealer ist näher an 21 – verloren.", "falsch"],
     };
     const [text, art] = texte[ergebnis.grund];
     meldungSetzen(text, art);
     gewinnSetzen(netto);
     seiten.spieler.hand.classList.add(
-      ergebnis.ergebnis === "push" ? "push" : netto > 0 ? "sieg" : "verloren"
+      ergebnis.ergebnis === "push" ? "push" : netto > 0 ? "sieg" : "verloren",
     );
     if (!bewegungReduziert() && netto > 0) gewinnElement.classList.add("blitz");
 
@@ -602,9 +626,9 @@ function starteSpiel() {
   doppelnKnopf.addEventListener("click", doppeln);
 
   document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;      // Browser-Kürzel nicht stören
-    if (e.repeat) return;                                // gehaltene Taste nicht mehrfach auslösen
-    if (document.querySelector("dialog[open]")) return;  // Dialog offen → Tasten gehören ihm
+    if (e.ctrlKey || e.metaKey || e.altKey) return; // Browser-Kürzel nicht stören
+    if (e.repeat) return; // gehaltene Taste nicht mehrfach auslösen
+    if (document.querySelector("dialog[open]")) return; // Dialog offen → Tasten gehören ihm
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     const taste = e.key?.toLowerCase();
     if (taste === "g") geben();
@@ -614,8 +638,8 @@ function starteSpiel() {
   });
 
   document.getElementById("reset").addEventListener("click", () => {
-    spielZuruecksetzen(SPIEL);                           // löscht Topliste + gespeicherten Chip (NICHT das Spielgeld)
-    speichere(SPIEL, "einsatz", einsatz);                // der aktuell gewählte Chip bleibt gewählt
+    spielZuruecksetzen(SPIEL); // löscht Topliste + gespeicherten Chip (NICHT das Spielgeld)
+    speichere(SPIEL, "einsatz", einsatz); // der aktuell gewählte Chip bleibt gewählt
     seiteAktualisieren();
   });
 

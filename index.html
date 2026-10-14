@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07070f">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/style.css">
+  <!-- spielspezifische Styles (Karten, Tisch, Austeil-Animation) – das gemeinsame Design bleibt in ../assets/style.css -->
+  <link rel="stylesheet" href="./spiel.css">
+  <title>Blackjack · Browser-Arcade</title>
+  <meta name="description" content="Blackjack mit Spielgeld: Komm der 21 näher als der Dealer, ohne drüberzugehen. Hit, Stand und Double, Blackjack zahlt 3:2. Ohne Konto und Cookies.">
+</head>
+<body style="--ak:var(--gold)">
+  <div class="raster" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+  <header class="kopf"><nav class="container nav" aria-label="Hauptnavigation">
+    <a class="marke" href="./"><span class="logo">▶</span>GAMES</a>
+    <div class="nav-links"><a href="./impressum.html">Impressum</a><a href="./datenschutz.html">Datenschutz</a></div>
+  </nav></header>
+  <main id="main" class="container">
+    <div class="spiel-kopf"><div><h1>BLACKJACK</h1><p class="unterzeile">Komm der 21 näher als der Dealer – ohne drüberzugehen. Nur mit Spielgeld.</p><p class="alters-hinweis">Simuliertes Glücksspiel mit Spielgeld · ab 16</p></div></div>
+
+    <!-- Kontostand · Höchster Gewinn · Bester Stand: baut walletHud() aus ../assets/wallet.js -->
+    <div class="hud" id="wallet-hud"></div>
+
+    <div class="buehne">
+      <div class="tisch-bj">
+        <section class="hand" id="hand-dealer" aria-label="Dealer-Hand">
+          <div class="hand-kopf"><span class="beschriftung">Dealer</span><span class="punkte-pill" id="dealer-punkte"></span></div>
+          <div class="karten-reihe" id="dealer-karten" style="--n:0"></div>
+        </section>
+
+        <p class="meldung" id="meldung" data-art="neutral" aria-live="polite"></p>
+        <div class="gewinn-anzeige" id="gewinn" aria-live="polite"></div>
+
+        <section class="hand" id="hand-spieler" aria-label="Deine Hand">
+          <div class="hand-kopf"><span class="beschriftung">Du</span><span class="punkte-pill" id="spieler-punkte"></span><span class="punkte-pill einsatz-pill" id="einsatz-anzeige"></span></div>
+          <div class="karten-reihe" id="spieler-karten" style="--n:0"></div>
+        </section>
+      </div>
+
+      <div class="bedienung">
+        <div class="chips" id="chips" role="group" aria-label="Einsatz wählen">
+          <button type="button" class="chip" data-wert="10" aria-pressed="false">10</button>
+          <button type="button" class="chip" data-wert="25" aria-pressed="false">25</button>
+          <button type="button" class="chip" data-wert="50" aria-pressed="true">50</button>
+          <button type="button" class="chip" data-wert="100" aria-pressed="false">100</button>
+        </div>
+        <button type="button" class="knopf primaer geben-knopf" id="geben">Geben</button>
+      </div>
+
+      <div class="aktionen-leiste" role="group" aria-label="Aktionen">
+        <button type="button" class="knopf primaer aktions-knopf" id="hit">Hit<small>Taste H</small></button>
+        <button type="button" class="knopf primaer aktions-knopf" id="stand">Stand<small>Taste S</small></button>
+        <button type="button" class="knopf primaer aktions-knopf" id="doppeln">Double<small>Taste D</small></button>
+      </div>
+    </div>
+
+    <p class="steuerung">Steuerung: <kbd>G</kbd> Geben, <kbd>H</kbd> Hit (Karte ziehen), <kbd>S</kbd> Stand (bleiben), <kbd>D</kbd> Double (Einsatz verdoppeln). Am Handy einfach die Knöpfe antippen.</p>
+
+    <div class="hinweis"><strong>Hinweis:</strong> Nur Spielgeld – kein Echtgeld, keine Kaufmöglichkeit. Das Konto teilen sich alle Casino-Spiele dieser Seite und liegt nur in deinem Browser.</div>
+
+    <section style="max-width:420px;margin-top:36px"><h2 style="font-family:var(--pixel);font-weight:400;font-size:.85rem">Größte Gewinne · Top 3</h2><div id="topliste"></div>
+      <button class="knopf" id="reset" style="margin-top:10px">Topliste zurücksetzen</button>
+      <p style="margin:8px 0 0;color:var(--mut);font-size:.85rem">Es zählt der höchste Netto-Gewinn einer einzelnen Runde. Dein Spielgeld bleibt beim Zurücksetzen unverändert.</p></section>
+
+    <section class="lernbox"><details open><summary>Anleitung &amp; Regeln</summary>
+      <p><strong>Ziel:</strong> Deine Hand soll der 21 näher kommen als die des Dealers, ohne die 21 zu überschreiten. Wer drüber ist, hat sich „überkauft“ (englisch: Bust) und verliert sofort.</p>
+      <ul>
+        <li><strong>Kartenwerte:</strong> 2 bis 10 zählen ihre Zahl, Bube, Dame und König zählen 10. Das Ass zählt 1 oder 11, immer so, dass es für dich am besten ist. Zählt es noch als 11, heißt die Hand „weich“ (zum Beispiel „weich 17“): Du kannst dann noch eine Karte ziehen, ohne dich zu überkaufen.</li>
+        <li><strong>Ablauf:</strong> Einsatz wählen (10, 25, 50 oder 100), „Geben“ drücken. Du und der Dealer bekommen je zwei Karten, von den Dealer-Karten bleibt die zweite verdeckt.</li>
+        <li><strong>Hit:</strong> Du ziehst eine weitere Karte. <strong>Stand:</strong> Du bleibst bei deiner Hand, dann ist der Dealer dran. Bei genau 21 bleibst du automatisch stehen.</li>
+        <li><strong>Double:</strong> Nur mit deinen ersten zwei Karten und nur, wenn dein Guthaben für einen zweiten Einsatz reicht. Der Einsatz verdoppelt sich, du bekommst genau eine Karte und bleibst dann automatisch stehen.</li>
+        <li><strong>Dealer-Regel:</strong> Der Dealer deckt auf, zieht bei 16 oder weniger Karten und bleibt ab 17 stehen – auch bei einem weichen 17 (Ass + 6). Er hat keine Wahl, die Regel ist fest.</li>
+        <li><strong>Blackjack:</strong> Ass plus eine 10er-Karte mit den ersten zwei Karten. Das zahlt 3:2 (bei 50 Einsatz gewinnst du 75). Eine 21 mit drei oder mehr Karten ist kein Blackjack. Hat der Dealer Blackjack, endet die Runde sofort; haben beide eins, ist es ein Push.</li>
+        <li><strong>Auszahlungen:</strong> Sieg 1:1 (Einsatz zurück plus Gewinn in Höhe des Einsatzes), Blackjack 3:2, Push = Einsatz zurück, Niederlage = Einsatz weg. Bei ungeraden Beträgen wird der Gewinn abgerundet (Einsatz 25 → Blackjack-Gewinn 37).</li>
+        <li><strong>Bewusst weggelassen:</strong> Split (Hand teilen), Versicherung und Aufgeben. So bleiben die Regeln kurz. Pro Runde wird ein frisch gemischtes Deck mit 52 Karten verwendet.</li>
+        <li><strong>Topliste:</strong> Für die Top 3 zählt dein höchster Netto-Gewinn in einer Runde. Wird dein Spielgeld knapp (unter 10), bekommst du neues Startgeld.</li>
+      </ul>
+    </details></section>
+
+    <section class="lernbox"><details><summary>Wie funktioniert der Code?</summary>
+      <p><strong>Das Ass-Problem.</strong> Ein Ass zählt 1 oder 11. Die Funktion <code>handWert()</code> löst das mit einem Trick: Zuerst zählt sie jedes Ass als 11. Ist die Summe dann über 21, macht sie nacheinander Asse zu 1 (Summe minus 10), bis die Hand passt oder keine Asse mehr übrig sind. Übrig gebliebene Asse mit Wert 11 machen die Hand „weich“. Beispiel Ass, Ass, 9: erst 11 + 11 + 9 = 31, ein Ass wird zu 1, also 21 – und ein Ass zählt noch 11, die Hand ist weich.</p>
+      <p><strong>Reine Funktionen.</strong> Die Regeln stehen in kleinen Funktionen ohne DOM-Zugriff: <code>handWert</code>, <code>dealerMussZiehen</code> (nur <code>summe &lt; 17</code>, darum steht der Dealer auch bei weichem 17), <code>darfDoppeln</code> und <code>rundeAuswerten</code>. Sie bekommen Daten rein und geben ein Ergebnis zurück. Das macht sie in Node testbar, ganz ohne Browser.</p>
+      <p><strong>Auszahlung rechnen.</strong> <code>rundeAuswerten</code> liefert die BRUTTO-Auszahlung: Sieg = 2 × Einsatz (Einsatz zurück plus Gewinn), Blackjack = Einsatz + <code>Math.floor(Einsatz × 3 / 2)</code>, Push = Einsatz, Niederlage = 0. Diese Zahl geht an <code>rundeAbschliessen()</code> aus wallet.js. Beim Double ist der Gesamteinsatz doppelt so hoch, die Funktion rechnet damit einfach weiter.</p>
+      <p><strong>Ein Deck pro Runde.</strong> Echte Casinos mischen 6 bis 8 Decks in einen „Schuh“ und spielen mehrere Runden daraus. Hier wird jede Runde neu gemischt (Fisher-Yates), das ist einfacher und macht Kartenzählen sinnlos.</p>
+      <p><strong>Zustandsmaschine.</strong> Die Variable <code>phase</code> sagt, was gerade erlaubt ist: <code>einsatz</code>, <code>austeilen</code>, <code>spieler</code> oder <code>dealer</code>. Jede Funktion prüft sie zuerst, sonst könnte man während einer Animation noch einmal klicken. <code>steuerungEinstellen()</code> schaltet daraus alle Knöpfe aus oder an.</p>
+      <p><strong>Animation.</strong> Jede Karte bekommt die Klasse <code>fliegt</code> (CSS-Keyframes mit nur <code>transform</code> und <code>opacity</code>). Das verdeckte Dealer-Blatt wird mit dem 3D-Flip aus Higher Lower aufgedeckt, und erst dann schreibt das Spiel Wert und Farbe auf die Vorderseite – vorher steht die Karte nicht im HTML. Zwischen den Schritten wartet <code>await warte(ms)</code>.</p>
+    </details></section>
+  </main>
+  <footer class="fuss"><div class="container fuss-in"><span>Browser-Arcade · Open Source</span><nav aria-label="Rechtliches"><a href="./impressum.html">Impressum</a><a href="./datenschutz.html">Datenschutz</a></nav></div></footer>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>

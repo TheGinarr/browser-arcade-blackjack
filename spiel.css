@@ -1,0 +1,124 @@
+/* ============================================================
+   Blackjack · spielspezifische Styles
+   ------------------------------------------------------------
+   Das gemeinsame Design (HUD, Knöpfe, Chips, Dialog …) steckt in
+   ../assets/style.css. Hier liegt nur, was der Tisch braucht.
+
+   QUELLE DES KARTENDESIGNS: higher-lower/spiel.css (Karte mit
+   Vorder-/Rückseite und 3D-Flip). Die Bausteine sind hier als
+   eigene Kopie übernommen und angepasst:
+   - kleinere Karten (--kw), weil bis zu 11 Karten in eine Hand passen
+   - Karten überlappen sich, damit lange Hände auch am Handy passen
+   - Karten "fliegen" beim Austeilen ins Bild (nur transform/opacity)
+   ============================================================ */
+
+:root{ --rot:#ff3b4e; }       /* Rot für Verlust und Herz/Karo */
+
+/* Das hidden-Attribut soll IMMER gewinnen. Ohne diese Regel würde
+   z. B. ".chips{display:flex}" das hidden überstimmen. */
+[hidden]{display:none !important}
+
+/* ---------- Tisch ---------------------------------------------- */
+/* --kw = Kartenbreite. Am Handy schrumpft sie mit, am Desktop wächst
+   sie nur bis 96px. Alle Kartenmaße rechnen mit dieser Variable. */
+.tisch-bj{--kw:clamp(58px,17vw,96px)}
+
+.hand{padding:6px 0}
+.hand-kopf{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;margin-bottom:10px}
+.beschriftung{white-space:nowrap;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.punkte-pill{
+  min-width:2.6em;padding:3px 12px;border-radius:999px;text-align:center;
+  font:600 .85rem var(--mono);color:var(--ak);
+  background:var(--panel2);border:1px solid var(--line);
+}
+.punkte-pill:empty{display:none}
+.einsatz-pill{color:var(--txt)}
+
+/* Kartenreihe: Mindesthöhe = Kartenhöhe (Breite x 7/5), damit nichts springt,
+   wenn die erste Karte erscheint. */
+.karten-reihe{
+  display:flex;justify-content:center;align-items:flex-start;
+  min-height:calc(var(--kw) * 1.4);
+}
+.karten-reihe .karte-szene{flex:none}
+/* Überlappung: Ab der zweiten Karte rutscht jede Karte nach links unter ihre
+   Vorgängerin. Wie weit, rechnet CSS selbst: mindestens 40 % der Kartenbreite,
+   bei vielen Karten so viel, dass die ganze Hand in die Reihe passt.
+   100 % bei margin-left = Breite der Reihe, --n = Kartenanzahl (setzt game.js). */
+.karten-reihe .karte-szene + .karte-szene{
+  margin-left:calc(-1 * max(var(--kw) * .4, var(--kw) - (100% - var(--kw)) / (var(--n) - 1)));
+}
+
+/* Ergebnis-Rahmen um alle Karten einer Hand (die Vorderseite liest --rand) */
+.hand.sieg{--rand:var(--lime)}
+.hand.push{--rand:var(--cyan)}
+.hand.verloren{--rand:var(--rot)}
+
+/* ---------- Karte: Szene → Dreh-Element → zwei Flächen ---------- */
+.karte-szene{width:var(--kw);aspect-ratio:5/7;perspective:900px;position:relative}
+.karte-dreh{
+  position:relative;width:100%;height:100%;
+  transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.33,1,.68,1);
+}
+.karte-dreh.aufgedeckt{transform:rotateY(180deg)}
+
+.flaeche{
+  position:absolute;inset:0;
+  border-radius:calc(var(--kw) * .08);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.flaeche.hinten{
+  background:repeating-linear-gradient(45deg,#1b1b3a 0 7px,#252552 7px 14px);
+  border:2px solid color-mix(in srgb,var(--gold) 55%,var(--line));
+  box-shadow:inset 0 0 0 5px var(--panel),inset 0 0 0 6px color-mix(in srgb,var(--gold) 40%,transparent),0 6px 18px #0008;
+}
+.flaeche.hinten::after{
+  content:"◆";position:absolute;inset:0;display:grid;place-items:center;
+  font-size:calc(var(--kw) * .3);
+  color:var(--gold);text-shadow:0 0 12px color-mix(in srgb,var(--gold) 60%,transparent);
+}
+.flaeche.vorne{
+  transform:rotateY(180deg);
+  background:linear-gradient(160deg,#f6f6fc,#d3d6ea);
+  color:#14141f;
+  box-shadow:0 6px 18px #0008,0 0 0 3px var(--rand,transparent);
+  transition:box-shadow .3s ease;
+}
+.flaeche.vorne.rot{color:#d1203c}
+
+.ecke{
+  position:absolute;display:flex;flex-direction:column;align-items:center;
+  line-height:1;font-family:var(--sans);font-weight:700;
+  font-size:calc(var(--kw) * .2);
+}
+.ecke.oben{top:5%;left:7%}
+.ecke.unten{bottom:5%;right:7%;transform:rotate(180deg)}
+.ecke-symbol{font-size:.85em;margin-top:.1em}
+.mitte{position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--kw) * .5);line-height:1}
+
+/* Austeilen: Die Karte fliegt von rechts oben (dort liegt der gedachte Stapel)
+   an ihren Platz. Nur transform + opacity: das lässt der Browser auf der
+   Grafikkarte laufen, es ruckelt also nicht. "both" = schon vor dem Start unsichtbar. */
+@keyframes karte-fliegt{
+  from{opacity:0;transform:translate(calc(var(--kw) * 1.8),calc(var(--kw) * -1.3)) rotate(16deg)}
+  to{opacity:1;transform:none}
+}
+.karte-szene.fliegt{animation:karte-fliegt .38s cubic-bezier(.33,1,.68,1) both}
+
+/* ---------- Meldungen und Bedienung ----------------------------- */
+.meldung{min-height:1.6em;margin:12px 0 0;text-align:center;font-weight:600;transition:color var(--schnell)}
+.meldung[data-art="richtig"]{color:var(--lime)}
+.meldung[data-art="gleich"]{color:var(--cyan)}
+.meldung[data-art="falsch"]{color:var(--rot)}
+.meldung[data-art="neutral"]{color:var(--txt)}
+
+.bedienung{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 16px}
+.bedienung .chips{margin:6px 0;justify-content:center}
+.aktionen-leiste{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:10px}
+.aktions-knopf{
+  flex:1 1 110px;max-width:190px;min-height:54px;
+  font-family:var(--pixel);font-weight:400;font-size:.8rem;
+}
+.aktions-knopf small{display:block;margin-top:4px;font:400 .68rem var(--mono);opacity:.75}
+.geben-knopf{min-height:48px;font-family:var(--pixel);font-weight:400;font-size:.8rem}
